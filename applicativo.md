@@ -121,7 +121,23 @@ Un po' come una persona può possedere più di un bene immobile, anche un proces
 
 Soprattutto sui sistemi UNIX ma non solo, essendo la socket intesa come un file, è spesso soggetta a tutti quei meccanismi di condivisione ed ereditarietà a cui si va incontro durante la generazioni di nuovi processi figli. Situazioni simili vanno opportunamente gestite al fine di evitare inconsistenze ma non sono tuttavia sempre illegali dal punto di vista del sistema operativo.
 
-Azioni come la ```bind()```o la ```listen()``` ad esempio sono concesse esclusivamente al processo originale e non possono essere ripetute finché non viene effettuato un corrispettivo detach, tuttavia processi figli potrebbero effettuare operazioni di ```send()```o ```recv()``` sulla stessa socket senza particolari problemi.
+Azioni come la ```bind()``` o la ```listen()``` ad esempio sono concesse esclusivamente al processo originale e non possono essere ripetute finché non viene effettuato un corrispettivo detach, tuttavia processi figli potrebbero effettuare operazioni di ```send()``` o ```recv()``` sulla stessa socket senza particolari problemi.
+
+[Approfondimenti e implementazione delle socket](socket.md)
+
+## Requisiti degli applicativi
+
+Sebbene sia di una certa rilevanza, la scelta dell'architettura di un'applicazione è solo uno dei tanti punti da curare durante la progettazione (o l'evolutiva) degli applicativi. Individuare correttamente i requisiti è una delle operazioni cruciali per la buona riuscita di un progetto software. Più i requisiti risultano nitidi più oculate saranno le scelte nelle tecnologie, nelle metodologie di sviluppo e nella definizione dei flow che l'applicazione deve seguire.
+
+L'adozione di una certa infrastruttura sottostante piuttosto che di un'altra può rendere più o meno agevole lo sviluppo.
+Alcune infrastrutture possono sposare perfettamente le necessità dell'applicativo, con altre è necessario scendere a compromessi su aspetti graditi ma non cruciali e altre ancora vanno scartate a priori poiché impossibilitate a soddisfare anche i requisiti più basilari.
+
+Un suddivisione abbastanza intuitiva dei requisiti di cui gli applicativi hanno bisogno in maniera più o meno variabile a seconda dello scopo a cui adempiono può essere la seguente:
+
+- bisogno di mantenere l'integrità dei dati: se è o meno necessario che i dati arrivino in maniera fedele all'utente finale (o ad eventuali altri applicativi che ne fanno uso), quante perdite possono esserci e qual è il tasso di errori ammessi;
+- garanzie sul throughput: di quante risorse ha bisogno un'applicazione per funzionare in maniera efficiente, se necessità di un gran numero di risorse o se può adattarsi in maniera elastica rispetto al resto del carico;
+- garanzie di tipo temporale: se l'applicazione necessita o meno di essere interattiva e quanto ritardo è ammesso;
+- sicurezza: la necessità, oltre che di mantenere l'integrità dei dati, di mantenerli confidenziali ed impedirne il ripudio;
 
 
 
