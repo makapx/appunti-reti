@@ -132,14 +132,39 @@ Sebbene sia di una certa rilevanza, la scelta dell'architettura di un'applicazio
 L'adozione di una certa infrastruttura sottostante piuttosto che di un'altra può rendere più o meno agevole lo sviluppo.
 Alcune infrastrutture possono sposare perfettamente le necessità dell'applicativo, con altre è necessario scendere a compromessi su aspetti graditi ma non cruciali e altre ancora vanno scartate a priori poiché impossibilitate a soddisfare anche i requisiti più basilari.
 
-Un suddivisione abbastanza intuitiva dei requisiti di cui gli applicativi hanno bisogno in maniera più o meno variabile a seconda dello scopo a cui adempiono può essere la seguente:
+Una suddivisione abbastanza intuitiva dei requisiti solitamente richiesti dagli applicativi, in maniera più o meno variabile a seconda dello scopo a cui adempiono, può quindi essere la seguente:
 
-- bisogno di mantenere l'integrità dei dati: se è o meno necessario che i dati arrivino in maniera fedele all'utente finale (o ad eventuali altri applicativi che ne fanno uso), quante perdite possono esserci e qual è il tasso di errori ammessi;
-- garanzie sul throughput: di quante risorse ha bisogno un'applicazione per funzionare in maniera efficiente, se necessità di un gran numero di risorse o se può adattarsi in maniera elastica rispetto al resto del carico;
-- garanzie di tipo temporale: se l'applicazione necessita o meno di essere interattiva e quanto ritardo è ammesso;
-- sicurezza: la necessità, oltre che di mantenere l'integrità dei dati, di mantenerli confidenziali ed impedirne il ripudio;
+- **bisogno di mantenere l'integrità dei dati**: se è o meno necessario che i dati arrivino in maniera fedele all'utente finale (o ad eventuali altri applicativi che ne fanno uso), quante perdite possono esserci e qual è il tasso di errori ammessi;
+- **garanzie sul throughput**: di quante risorse ha bisogno un'applicazione per funzionare in maniera efficiente, se necessità di un gran numero di risorse o se può adattarsi in maniera elastica rispetto al resto del carico;
+- **garanzie di tipo temporale**: se l'applicazione necessita o meno di essere interattiva e quanto ritardo è ammesso;
+- **sicurezza**: la necessità, oltre che di mantenere l'integrità dei dati, di mantenerli confidenziali ed impedirne il ripudio;
 
+Quando si configurano uno o più di questi bisogni si dice che l'applicativo è *sensibile* rispetto all'aspetto in questione.
 
+### Esempi pratici
+
+| Applicativo  | Utilizzo               | Integrità dei dati                                           | Throughtput                                                  | Temporale                                               | Sicurezza                                                    |
+| ------------ | ---------------------- | ------------------------------------------------------------ | ------------------------------------------------------------ | ------------------------------------------------------- | ------------------------------------------------------------ |
+| Discord      | Chat testuale e vocale | Non troppo esigente. Sono ammessi errori nella comunicazione vocale[^3] | In situazioni ordinarie non è particolarmente esigente       | Sì. La comunicazione deve avvenire quasi in tempo reale | Sì, nei limiti del rapporto costi/benefici/efficienza di un applicativo di messaggistica |
+| Netflix      | Streaming              | Entro certi limiti sono ammessi errori e perdite             | Sì, lo streaming ha bisogno di un certo numero di risorse dedicate | Sì. La riproduzione deve essere fluida                  | Nel contesto della riproduzione di un contenuto non è troppo esigente |
+| Transmission | File transfert         | Molto esigente                                               | Sì, sono ammesse lievi variazioni a seconda delle esigenze dell'utente e degli specifici file di interesse | No. Qui il timing va ricondotto al throughtput          | Sì. Il file non deve venire corrotto durante il download     |
+| Quake        | Videogame              | Non troppo esigente                                          | Esigente quanto basta, a seconda dei momenti e del carico    | Molto esigente                                          | Non particolarmente                                          |
+
+### Scelta del protocollo adottato a livello di trasporto
+
+Lasciando alla sezione apposita gli ulteriori dettagli tecnici, ci limitiamo ad affermare che esistono due protocolli principalmente adottati a livello di trasporto:
+
+- **TCP** (Transmission Control Protocol)
+- **UDP** (User Datagram Protocol)
+
+UDP è un protocollo *banale*, non offre nulla di particolarmente allettante se non la propria semplicitàì, a discapito ovviamente dell'affidabilità, della sicurezza o di qualunque altro requisito. Ciò nonostante può risultare parecchio utile per l'implementazione di alcune funzionalità non particolarmente sensibili ai requisiti sopra presentati.
+
+Al contrario, TCP offre al livello applicativo servizi allettanti quali il *trasferimento dati affidabile*, il *controllo di flusso* e di *congestione*, di contro però è molto più complesso di UDP e comunque non offre altre garanzie desiderabili, come ad esempio quelle sul tempo o sulla sicurezza.
+
+In condizioni reali il livello applicativo sfrutta spesso i servizi offerti da TCP e cerca di compensarne le mancanze attraverso l'utilizzo di estensioni o protocolli di natura applicativa.
+
+## Protocolli applicativi
 
 [^1]: possono ovviamente manifestarsi dei disservizi di durata più o meno lieve per cui il server può risultare non raggiungibile 
 [^2]: tecnologie basate su blockchain come le criptovalute o il web3
+[^3]: discord si appoggia al protocollo UDP per quanto riguarda la gestione dei canali vocali
