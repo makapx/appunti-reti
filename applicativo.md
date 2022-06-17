@@ -97,7 +97,7 @@ Una delle rappresentazioni più semplici della socket è quella dell'oggetto sof
 
 L'indirizzo della macchina unito al numero di porta permettono un'identificazione univoca del processo. Il tipo invece descrive le modalità secondo cui la comunicazione deve avvenire.
 
-Questo tipo di rappresentazione prende però in considerazione una sola delle due macchine, dando quindi una visione parziale della comunicazione.
+Questo tipo di rappresentazione prende però in considerazione una sola delle due macchine, dando quindi una visione parziale della comunicazione, non a caso, come si vedrà più avanti, questa rappresentazione è utilizzata per descrivere le socket UDP (ma risulta *suitable* più in generale a tutti i protocolli a livello di trasporto *connection-less* e soprattutto in presenza di canali unidirezionali)
 
 ### Socket di Berkeley a cinque parametri
 
@@ -111,7 +111,7 @@ La seconda e più completa rappresentazione delle socket è quella a cinque para
 
 Qui il paragone con la porta di casa o la casella postale non è più così calzante visto che la socket è intesa più come le *estremità di un canale di comunicazione tra due host*.
 
-*La struttura di Berkeley è quella maggiormente utilizzata nei sistemi reali e i dettagli tecnici a seguire fanno riferimento ad essa.*
+*La struttura di Berkeley è quella maggiormente utilizzata nei sistemi reali e i dettagli tecnici a seguire fanno riferimento ad essa.* Possono essere utilizzate sia per descrivere le socket UDP sia quelle TCP. Nella loro implementazione reale le socket sono uno strumento estremamente potente, pensato per lavorare non solo con questi due maggiori protocolli a livello di trasporto ma con qualunque.
 
 [Ulteriori approfondimenti](https://en.wikipedia.org/wiki/Berkeley_sockets)
 
