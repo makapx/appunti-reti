@@ -10,4 +10,4 @@ Eventuali contributi e segnalazioni sono ben accetti.
 ### Indice degli argomenti:
 
 1. [Stack di rete - TCP/IP e ISO/OSI](stacks.md)
-1. [Livello applicativo](applicativo.md)
+2. [Livello applicativo](applicativo.md)

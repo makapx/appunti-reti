@@ -168,7 +168,55 @@ In condizioni reali il livello applicativo sfrutta spesso i servizi offerti da T
 
 ## Protocolli applicativi
 
+### TELNET
 
+Telnet è un protocollo di livello applicativo di natura **client-server** che fornisce all'utente una sessione su una specifica macchina remota, con cui instaura una connessione **bidirezionale**, interattiva e **orientata ai byte** (ai caratteri). Basato su TCP, è stato sviluppato a partire dal 1969 ed è definito negli RFC [15](https://datatracker.ietf.org/doc/html/rfc15) ed [855](https://datatracker.ietf.org/doc/html/rfc855). Tipicamente i server che forniscono un servizio Telnet hanno un *daemon* in ascolto sulla **porta 23**.
+
+La struttura di un client Telnet è piuttosto semplice e consiste in linea generale di due processi, uno dedito a monitorare gli input e trasmetterli al server, l'altro in ascolto dei caratteri che il server gli rimanda indietro, eventualmente mostrato a video (così da avere conferma che il carattere sia stato correttamente ricevuto).
+
+<img src="/home/makapx/Scrivania/Università/Appunti/img/telnet.png" alt="telnet" style="zoom:150%;" />
+
+Nella cultura popolare Telnet è conosciuto per il text art movie di Star Wars, episodio IV, che è per altro un esempio molto divertente di utilizzo.
+
+```bash
+telnet towel.blinkenlights.nl
+```
+
+In passato Telnet era uno strumento molto utile per il debugging degli applicativi su macchine remote ma vista l'*assenza di meccanismi di autenticazione* e la ***trasmissione dei dati completamente in chiaro*** è stato sostituito da protocolli con garanzie di sicurezza, come ad esempio SSH.
+
+### FTP
+
+FTP (file transfert protocolo) è un protocollo di livello applicativo di tipo **client-sever** che sia appoggia a TCP per fornire servizi di ***trasferimento dati affidabile*** di dati e interazione con i filesystem remoti. Sviluppato a partire dal 1971, è stato inizialmente definito dal [RFC 114](https://datatracker.ietf.org/doc/html/rfc114).
+
+Al contrario di Telnet utilizza ***due connessioni TCP distinte***, una dedicata al trasferimento dei dati e l'altra all'invio dei comandi. Hanno invece in comune il trasmettere dati in chiaro, sebbene FTP preveda un sistema di autenticazione prima di stabilire una connessione.
+
+Tipicamente i daemon sul server sono in bind sulla **porta 21** **per le operazioni di controllo** e sulla **porta 20 per il trasferimento dei dati**.
+
+Nel protocollo FTP è quindi possibile distinguere due componenti principali:
+
+- il **DTP** (Data Transfert Protocol) che si occupa di gestire il trasferimento
+- il **PI** (protocol interface / protocol interpreter ), l'interfaccia di comunicazione, che nel caso del client funge da interprete
+
+![ftp](/home/makapx/Scrivania/Università/Appunti/img/ftp.png)
+
+Al fine di stabilire una sessione FTP si possono seguire due modalità:
+
+- **attiva**: il client manda il comando ``PORT`` al server, specificando il numero di porta su cui desidera ricevere i dati.  Il numero di porta di controllo sul mittente è randomico, tipicamente un numero alto, la porta di destinazione è la 21. Il server risponde con un ``ACK`` e tenta di stabilire una nuova connessione, quella dedicata ai dati, impostando come porta mittente la porta 20 e come porta di destinazione verso il client quella specificata insieme al comando ``PORT``. Se il client risponde a sua volta con un ``ACK`` la sessione FTP è stabilita.
+- **passiva**: in maniera analoga al procedimento sopra viene però spedito dal client un messaggio di ``PASV`` e il server FTP anziché utilizzare la porta 20 sceglie una porta *effimera* (di numero altro randomico).
+
+[Maggiori approfondimenti](https://documentation.meraki.com/MX/NAT_and_Port_Forwarding/Active_and_Passive_FTP_Overview_and_Configuration)
+
+<img src="/home/makapx/Scrivania/Università/Appunti/img/ftp-passive-active.jpg" alt="ftp-passive-active" style="zoom:80%;" />
+
+Varianti di FTP sono:
+
+- **SFTP** (SSH File Transfer Protocol)
+- **FTPS** (FTP Secure): FTP con a supporto SSL o TLS per il trasferimento dati cifrato
+- **TFTP** (Trivial File Transfer Protocol): versione semplificata di FTP, privo di autenticazione, adatto all'utilizzo su dispositivi che lavorano a livello di trasporto, come i router.
+
+#### Sui processi deamon
+
+Sui sistemi UNIX i processi daemon legati alla rete vengono tipicamente gestiti attraverso il processo *inetd* (Internet daemon) che rimane in ascolto su molteplici porte e all'occorrenza effettua una ``fork()`` per poi caricare il codice del daemon appropriato, lasciando a quest'ultimo il compito di gestire la richiesta. In questo modo il daemon che fornisce il servizio è attivo solo quando è strettamente necessario. È comunque possibile configurare il sistema operativo in maniera tale che un certo daemon rimanga perennemente in ascolto su una porta particolarmente affollata così da eliminare eventuale *overhead*.
 
 [^1]: possono ovviamente manifestarsi dei disservizi di durata più o meno lieve per cui il server può risultare non raggiungibile 
 [^2]: tecnologie basate su blockchain come le criptovalute o il web3
