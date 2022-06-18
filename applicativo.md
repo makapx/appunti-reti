@@ -202,7 +202,7 @@ Nel protocollo FTP è quindi possibile distinguere due componenti principali:
 Al fine di stabilire una sessione FTP si possono seguire due modalità:
 
 - **attiva**: il client manda il comando ``PORT`` al server, specificando il numero di porta su cui desidera ricevere i dati.  Il numero di porta di controllo sul mittente è randomico, tipicamente un numero alto, la porta di destinazione è la 21. Il server risponde con un ``ACK`` e tenta di stabilire una nuova connessione, quella dedicata ai dati, impostando come porta mittente la porta 20 e come porta di destinazione verso il client quella specificata insieme al comando ``PORT``. Se il client risponde a sua volta con un ``ACK`` la sessione FTP è stabilita.
-- **passiva**: in maniera analoga al procedimento sopra viene però spedito dal client un messaggio di ``PASV`` e il server FTP anziché utilizzare la porta 20 sceglie una porta *effimera* (di numero altro randomico).
+- **passiva**: in maniera analoga al procedimento sopra viene però spedito dal client un messaggio di ``PASV`` e il server FTP anziché utilizzare la porta 20 sceglie una porta *effimera* (di numero altro randomico) e inoltra il valore al client, che tenta di stabilire con la porta effimera una connessione.
 
 [Maggiori approfondimenti](https://documentation.meraki.com/MX/NAT_and_Port_Forwarding/Active_and_Passive_FTP_Overview_and_Configuration)
 
