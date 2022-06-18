@@ -49,6 +49,7 @@ Ad oggi la maggioranza delle applicazioni in rete è sviluppata seguendo l'appro
 Nonostante ciò è in crescita l'interesse per le tecnologie distribuite.[^2]
 
 Un trattazione abbastanza interessante dei sistemi decentralizzati e del loro utilizzo ad oggi è disponibile [qui](https://www.gitbar.it/episodes/ep-119-insogna-ipfs).
+È inoltre possibile trovare un esempio di applicazione decentralizzata (o DApp) in questo [repository](https://github.com/TendTo/Appunti-Blockchain/tree/master/smart-contracts) Github.
 
 ### Protocolli di livello applicativo di tipo client-server: alcuni esempi
 
@@ -166,6 +167,8 @@ Al contrario, TCP offre al livello applicativo servizi allettanti quali il *tras
 In condizioni reali il livello applicativo sfrutta spesso i servizi offerti da TCP e cerca di compensarne le mancanze attraverso l'utilizzo di estensioni o protocolli di natura applicativa.
 
 ## Protocolli applicativi
+
+
 
 [^1]: possono ovviamente manifestarsi dei disservizi di durata più o meno lieve per cui il server può risultare non raggiungibile 
 [^2]: tecnologie basate su blockchain come le criptovalute o il web3
