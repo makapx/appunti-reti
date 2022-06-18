@@ -48,6 +48,8 @@ Un architettura distribuita come quella P2P è estremamente scalabile ma anche m
 Ad oggi la maggioranza delle applicazioni in rete è sviluppata seguendo l'approccio client-server, in linea con la predilezione storica per la semplicità che *funziona quanto basta* di questo tipo di contesto.
 Nonostante ciò è in crescita l'interesse per le tecnologie distribuite.[^2]
 
+Un trattazione abbastanza interessante dei sistemi decentralizzati e del loro utilizzo ad oggi è disponibile [qui](https://www.gitbar.it/episodes/ep-119-insogna-ipfs).
+
 ### Protocolli di livello applicativo di tipo client-server: alcuni esempi
 
 | Protocollo | Ambito di utilizzo                                           |
