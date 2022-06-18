@@ -174,7 +174,7 @@ Telnet è un protocollo di livello applicativo di natura **client-server** che f
 
 La struttura di un client Telnet è piuttosto semplice e consiste in linea generale di due processi, uno dedito a monitorare gli input e trasmetterli al server, l'altro in ascolto dei caratteri che il server gli rimanda indietro, eventualmente mostrato a video (così da avere conferma che il carattere sia stato correttamente ricevuto).
 
-<img src="/home/makapx/Scrivania/Università/Appunti/img/telnet.png" alt="telnet" style="zoom:150%;" />
+<img src="./img/telnet.png" alt="telnet" style="zoom:150%;" />
 
 Nella cultura popolare Telnet è conosciuto per il text art movie di Star Wars, episodio IV, che è per altro un esempio molto divertente di utilizzo.
 
@@ -186,7 +186,7 @@ In passato Telnet era uno strumento molto utile per il debugging degli applicati
 
 ### FTP
 
-FTP (file transfert protocolo) è un protocollo di livello applicativo di tipo **client-sever** che sia appoggia a TCP per fornire servizi di ***trasferimento dati affidabile*** di dati e interazione con i filesystem remoti. Sviluppato a partire dal 1971, è stato inizialmente definito dal [RFC 114](https://datatracker.ietf.org/doc/html/rfc114).
+FTP (file transfert protocolo) è un protocollo di livello applicativo di tipo **client-sever** che si appoggia a TCP per fornire servizi di ***trasferimento dati affidabile*** di dati e interazione con i filesystem remoti. Sviluppato a partire dal 1971, è stato inizialmente definito dal [RFC 114](https://datatracker.ietf.org/doc/html/rfc114).
 
 Al contrario di Telnet utilizza ***due connessioni TCP distinte***, una dedicata al trasferimento dei dati e l'altra all'invio dei comandi. Hanno invece in comune il trasmettere dati in chiaro, sebbene FTP preveda un sistema di autenticazione prima di stabilire una connessione.
 
@@ -197,7 +197,7 @@ Nel protocollo FTP è quindi possibile distinguere due componenti principali:
 - il **DTP** (Data Transfert Protocol) che si occupa di gestire il trasferimento
 - il **PI** (protocol interface / protocol interpreter ), l'interfaccia di comunicazione, che nel caso del client funge da interprete
 
-![ftp](/home/makapx/Scrivania/Università/Appunti/img/ftp.png)
+![ftp](./img/ftp.png)
 
 Al fine di stabilire una sessione FTP si possono seguire due modalità:
 
@@ -206,7 +206,7 @@ Al fine di stabilire una sessione FTP si possono seguire due modalità:
 
 [Maggiori approfondimenti](https://documentation.meraki.com/MX/NAT_and_Port_Forwarding/Active_and_Passive_FTP_Overview_and_Configuration)
 
-<img src="/home/makapx/Scrivania/Università/Appunti/img/ftp-passive-active.jpg" alt="ftp-passive-active" style="zoom:80%;" />
+<img src="./img/ftp-passive-active.jpg" alt="ftp-passive-active" style="zoom:80%;" />
 
 Varianti di FTP sono:
 
@@ -214,10 +214,10 @@ Varianti di FTP sono:
 - **FTPS** (FTP Secure): FTP con a supporto SSL o TLS per il trasferimento dati cifrato
 - **TFTP** (Trivial File Transfer Protocol): versione semplificata di FTP, privo di autenticazione, adatto all'utilizzo su dispositivi che lavorano a livello di trasporto, come i router.
 
-#### Sui processi deamon
+#### Sui processi daemon
 
 Sui sistemi UNIX i processi daemon legati alla rete vengono tipicamente gestiti attraverso il processo *inetd* (Internet daemon) che rimane in ascolto su molteplici porte e all'occorrenza effettua una ``fork()`` per poi caricare il codice del daemon appropriato, lasciando a quest'ultimo il compito di gestire la richiesta. In questo modo il daemon che fornisce il servizio è attivo solo quando è strettamente necessario. È comunque possibile configurare il sistema operativo in maniera tale che un certo daemon rimanga perennemente in ascolto su una porta particolarmente affollata così da eliminare eventuale *overhead*.
 
 [^1]: possono ovviamente manifestarsi dei disservizi di durata più o meno lieve per cui il server può risultare non raggiungibile 
 [^2]: tecnologie basate su blockchain come le criptovalute o il web3
-[^3]: discord si appoggia al protocollo UDP per quanto riguarda la gestione dei canali vocali
+[^3]: Discord si appoggia al protocollo UDP per quanto riguarda la gestione dei canali vocali
