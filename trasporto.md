@@ -88,6 +88,24 @@ Organizzare le richieste in pipeline risulta invece molto più efficiente. Go-ba
 
 ### Go-back-N
 
+Il protocollo Go-back-N prevede di inoltrare sulla rete i pacchetti in pipelining, limitando il numero di pacchetti in attesa di ACK. Gli $N$ slot costituiscono la cosiddetta *finestra di ricezione*, che si sposta man mano che i pacchetti vengono confermati. All'interno di una finestra di ricezione abbiamo quindi le variabili:
+
+- $base$ che indica l'inizio della finestra corrente
+- $ base + N - 1$ che indica l'ultimo slot della finestra corrente
+- $nextseqnum$, ovvero il primo slot libero nella finestra corrente
+
+Gli slot corrispondono ai numeri di sequenza con cui è possibile etichettare i nuovi messaggi da spedire.
+
+![go-back-n](./img/go-back-n.png)
+
+Il protocollo utilizza **ACK cumulativi**, di conseguenza alla ricezione di un ACK correlato ad un pacchetto con un numero di sequenza $i$, dove  $base < i < base + N - 1$ tutti gli altri pacchetti compresi nell'intervallo $[base, i]$ vengono a loro volta confermati. Specularmente, al verificarsi di un evento di perdita per il pacchetto con numero di sequenza $i$, tutti i pacchetti nell'intervallo $[base,i]$ verranno ritrasmessi. Vista la struttura del protocollo per il ricevente GBN ha più senso scartare eventuali pacchetti fuori sequenza che conservarli in un buffer. Non potendo confermare in maniera esclusiva il pacchetto $j$ , $i<j$, allo sliding della finestra il pacchetto $j$ verrebbe comunque ritrasmesso.
+
+Limitare la dimensione della finestra, come si vedrà poi anche in TCP, è uno strumento utile per il **controllo di flusso** e di **congestione**. Purtroppo però la gestione offerta da questo protocollo non risulta ottimale visto che le ritrasmissioni possono avvenire in blocco e per pacchetti che non ne necessiterebbero.
+
+Go-back-N, come Ripetizione selettiva, fa parte dei protocolli di tipo **sliding window**.
+
+### Ripetizione selettiva
+
 ## Protocollo TCP
 
 ### Stima del round trip time (RTT) e calcolo del timer
