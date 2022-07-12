@@ -133,7 +133,7 @@ Dove il $t_{elaborazione}$ indica il tempo di generazione dell'ACK.
 
 Dovendo spedire quindi $n$ byte in $k\ \mu s$ di tempo effettivo ho quindi un throughput di:
 
-$ \frac{8n}{10^{-6}\ k \ }\ Mbps $
+$\frac{8n}{10^{-6}\ k}\ Mbps $
 
 Dove $\frac{1}{10^{-6}}$ rappresenta la capacità a 10 Mbps del canale.
 
