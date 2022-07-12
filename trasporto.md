@@ -78,7 +78,7 @@ Come visto, TCP si limita a scartare i pacchetti errati e l'assenza di ACK viene
 - Go-back-N
 - Ripetizione selettiva
 
-### Protocollo Stop-and-wait
+#### Protocollo Stop-and-wait
 
 Stop-and-wait è un protocollo semplice quanto inefficiente nel quale i pacchetti vengono inviati uno per volta e prima di procedere al successivo invio viene attesa la conferma del precedente. Allo scattare del timer un pacchetto che non ha ancora ricevuto risposta viene ritrasmesso e la comunicazione rimarrà bloccata fino a che questo non riceverà conferma. Una simile gestione porta quindi ad uno spreco enorme del canale, che rimane inattivo la maggior parte del tempo.
 
@@ -86,7 +86,7 @@ Stop-and-wait è un protocollo semplice quanto inefficiente nel quale i pacchett
 
 Organizzare le richieste in pipeline risulta invece molto più efficiente. Go-back-N e Ripetizione selettiva adottano questa strategia.
 
-### Go-back-N
+#### Protocollo Go-back-N
 
 Il protocollo Go-back-N prevede di inoltrare sulla rete i pacchetti in pipelining, limitando il numero di pacchetti in attesa di ACK. Gli $N$ slot costituiscono la cosiddetta *finestra di ricezione*, che si sposta man mano che i pacchetti vengono confermati. All'interno di una finestra di ricezione abbiamo quindi le variabili:
 
@@ -98,16 +98,44 @@ Gli slot corrispondono ai numeri di sequenza con cui è possibile etichettare i 
 
 ![go-back-n](./img/go-back-n.png)
 
-Il protocollo utilizza **ACK cumulativi**, di conseguenza alla ricezione di un ACK correlato ad un pacchetto con un numero di sequenza $i$, dove  $base < i < base + N - 1$ tutti gli altri pacchetti compresi nell'intervallo $[base, i]$ vengono a loro volta confermati. Specularmente, al verificarsi di un evento di perdita per il pacchetto con numero di sequenza $i$, tutti i pacchetti nell'intervallo $[base,i]$ verranno ritrasmessi. Vista la struttura del protocollo per il ricevente GBN ha più senso scartare eventuali pacchetti fuori sequenza che conservarli in un buffer. Non potendo confermare in maniera esclusiva il pacchetto $j$ , $i<j$, allo sliding della finestra il pacchetto $j$ verrebbe comunque ritrasmesso.
+Il protocollo utilizza **ACK cumulativi**, di conseguenza alla ricezione di un ACK correlato ad un pacchetto con un numero di sequenza $i$, dove  $base < i < base + N - 1$ tutti gli altri pacchetti compresi nell'intervallo $[base, i]$ vengono a loro volta confermati. Specularmente, al verificarsi di un evento di perdita per il pacchetto con numero di sequenza $i$, tutti i pacchetti nell'intervallo $[base,i]$ verranno ritrasmessi. Vista la struttura del protocollo per il ricevente GBN ha più senso scartare eventuali pacchetti fuori sequenza che conservarli in un buffer. Non potendo confermare in maniera esclusiva il pacchetto $j$ , $i\lt j$, allo sliding della finestra il pacchetto $j$ verrebbe comunque ritrasmesso.
 
 Limitare la dimensione della finestra, come si vedrà poi anche in TCP, è uno strumento utile per il **controllo di flusso** e di **congestione**. Purtroppo però la gestione offerta da questo protocollo non risulta ottimale visto che le ritrasmissioni possono avvenire in blocco e per pacchetti che non ne necessiterebbero.
 
 Go-back-N, come Ripetizione selettiva, fa parte dei protocolli di tipo **sliding window**.
 
-### Ripetizione selettiva
+#### Protocollo Ripetizione selettiva
 
 Volendo evitare ritrasmissioni superflue, il protocollo Ripetizione selettiva risulta più adatto. SR infatti utilizza **ACK selettivi** per confermare i pacchetti all'interno della finestra di ricezione, si può quindi configurare la situazione in cui un alcuni pacchetti risultano confermati e altri no. Il destinatario SR si occupa quindi di bufferizzare i pacchetti e una volta ricevuta l'intera sequenza in finestra la trasmette a livello superiore.
 Un problema non trascurabile di questo approccio è che **non sempre le finestre del mittente e del destinatario coincidono**. Se il destinatario inoltra un ACK e questo va perso la finestra del mittente non potrà andare avanti. Essendo la finestra organizzata secondo un indice in modulo può accadere che la finestra del destinatario slitti alla sequenza successiva mentre quella del mittente rimanga bloccata sulla precedente. Ciò per essere risolto limitando la dimensione della finestra in modo che sia **minore o uguale alla metà dello spazio dei numeri di sequenza**.
+
+### Throughput
+
+La misura delle prestazioni di una connessione (ma non solo) è indicata con il termine throughput. Di fatto si dice che per ottenere una buona connessione bisogna "massimizzare il throughput".
+
+In uno scenario reale generale e trasmettere bit di informazione ha un costo sia in termini di tempo che di risorse allocate, a questi vanno aggiunti i ritardi di propagazione e di accodamento nei buffer.
+
+Supponiamo di aver bisogno di un certo tempo $t$ per generare un 1 bit e un canale a 10Mbps, ovvero in grado di trasmettere 10.000.000 bit in un secondo. Per generare un bit sul canale occorrono quindi
+
+$\frac{1}{10.000.000} = 0.1\ \mu s$
+
+Possiamo ottenere una misura del **throughput ideale** considerando esclusivamente l'uguaglianza precedente e il ritardo di propagazione della luce (non nel vuoto) che risulta essere $\approx 200.000\ km/s$, abbiamo quindi un tempo di propagazione del segnale di $\approx 5\ \mu s$.
+
+$Throughput\ ideale = t_{propagazione} + t_{generazione \ della \ frame} $
+
+Sebbene il throughput ideale sia irraggiungibile è utile per avere un'idea di quanto bene stia andando la nostra connessione.
+
+Calcoliamo il **throughput effettivo** come segue:
+
+$tempo\ effettivo = t_{generazione del frame} + RTT + t_{elaborazione}$
+
+Dove il $t_{elaborazione}$ indica il tempo di generazione dell'ACK.
+
+Dovendo spedire quindi $n$ byte in $k\ \mu s$ di tempo effettivo ho quindi un throughput di:
+
+$ \frac{8n}{10^{-6}\ k \ }\ Mbps $
+
+Dove $\frac{1}{10^{-6}}$ rappresenta la capacità a 10 Mbps del canale.
 
 ## Protocollo TCP
 
