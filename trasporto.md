@@ -91,7 +91,7 @@ Organizzare le richieste in pipeline risulta invece molto più efficiente. Go-ba
 Il protocollo Go-back-N prevede di inoltrare sulla rete i pacchetti in pipelining, limitando il numero di pacchetti in attesa di ACK. Gli $N$ slot costituiscono la cosiddetta *finestra di ricezione*, che si sposta man mano che i pacchetti vengono confermati. All'interno di una finestra di ricezione abbiamo quindi le variabili:
 
 - $base$ che indica l'inizio della finestra corrente
-- $ base + N - 1$ che indica l'ultimo slot della finestra corrente
+- $base + N - 1$ che indica l'ultimo slot della finestra corrente
 - $nextseqnum$, ovvero il primo slot libero nella finestra corrente
 
 Gli slot corrispondono ai numeri di sequenza con cui è possibile etichettare i nuovi messaggi da spedire.
@@ -118,11 +118,11 @@ Più le stime e la conseguente scelta del timer risultano accurate minore sarà 
 
 TCP si appoggia ad un sistema di **media mobile esponenziale ponderata (EWMA)** e tiene conto della deviazione tra il tempo stimato per il singolo pacchetto e quello complessivo per definire in maniera efficiente i tempi di reinoltro.
 
-$EstimatedRTT = (1-{\alpha})EstimatedRTT + {\alpha}SampleRTT$
+$EstimatedRTT_n = (1-{\alpha})EstimatedRTT_{n-1} + {\alpha}SampleRTT_n$
 
 tipicamente con ${\alpha} = \frac{1}{8}$
 
-$DevRTT = (1 - \beta)DevRTT + \beta|SampleRTT - EstimatedRTT|$
+$DevRTT = (1 - \beta)DevRTT + \beta|SampleRTT_n - EstimatedRTT_{n-1}|$
 
 tipicamente con $\beta = \frac{1}{4}$
 
