@@ -139,6 +139,32 @@ Dove $\frac{1}{10^{-6}}$ rappresenta la capacità a 10 Mbps del canale.
 
 ## Protocollo TCP
 
+TCP viene definito nelle [RFC 793](https://datatracker.ietf.org/doc/html/rfc793), [1122](https://datatracker.ietf.org/doc/html/rfc1122), [2018](https://datatracker.ietf.org/doc/html/rfc2018), [5681](https://datatracker.ietf.org/doc/html/rfc5681) e [7323](https://datatracker.ietf.org/doc/html/rfc7323).
+
+È un protocollo **orientato alla connessione (connection-oriented)**, ovvero prevede una fase preliminare per lo stabilimento la connessione tra gli host e viene implementato esclusivamente su di essi, non ritroviamo quindi TCP su router o switch, elementi che lavorano a più basso livello nello stack protocollare. È inoltre di tipo **statefull**, ovvero tiene traccia di informazioni inerenti lo stato della connessione.
+
+Le connessioni offerte da TCP sono di tipo **full-duplex** e **point-to-point**. Il **multicast** non è quindi supportato, sebbene possa essere simulato.[^1]
+
+### Apertura di una connessione TCP
+
+TCP prevede che una connessione tra due host venga stabilita attraverso l'**handshake a tre vie (three-way handshake)**. Il client TCP invia un segmento speciale, detto **SYN**, al server TCP di interesse. Quest'ultimo alloca le risorse necessarie e risponde con un altro segmento speciale, detto **SYNACK**, per confermare la richiesta di connessione. Alla ricezione del SYNACK il client alloca a sua volta risorse per la connessione e manda un terzo segmento, questa volta non di tipo SYN (quindi con il bit relativo a 0), e la comunicazione ha effettivamente inizio. Come vedremo analizzando la struttura dei segmenti TCP, i messaggi prevedono l'utilizzo di **numeri di sequenza** e **flag**.
+
+SYN è di fatto un bit all'interno del campo flag e viene utilizzato proprio per indicare che il segmento è del tipo sopra citato. I numeri di sequenza invece, come già accennato, permettono di coordinare la comunicazione.
+
+Il meccanismo di botta e risposta tra client e server nella fase iniziale della comunicazione prevede che entrambi scelgano un numero di sequenza casuale.
+
+Supponiamo ad esempio che il client scelga un numero di sequenza $x$. Alla ricezione del segmento il server sceglierà un proprio numero di sequenza, diciamo $y$, non correlato a quello ricevuto, e lo porrà nel campo dedicato al numero di sequenza. Porrà invece nel campo **ACK** (che è diverso dal bit di ACK presente nel campo flag), il valore $x +1$, per indicare la correlazione tra il pacchetto che si vuole trasmettere e quello appena ricevuto, come a dire "ho ricevuto il segmento $x$, puoi inoltrare l'$x+1esimo$", Specularmente, il client utilizzerà come ACK il valore $y+1$ e come numero di sequenza $x+1$.
+
+I numeri di sequenza in questa occasione sono anche chiamati ***client_isn*** e ***server_isn***.
+
+I segmenti di SYN non trasportano dati di livello applicativo, ovvero non hanno **payload**, il terzo segmento invece sì.
+
+![handshake-tcp](./img/handshake-tcp.png)
+
+La fase di handshake porta con sé degli aspetti interessanti dal punto di vista della sicurezza. Si può dimostrare come una randomizzazione dei numeri di sequenza iniziali riduca i rischi in termini di sicurezza e che l'allocazione ritardata delle risorse da parte del server possa mitigare le conseguenze di un attacco di tipo **SYN flooding**.
+
+Come tutti gli altri segmenti, anche i segmenti di SYN sono soggetti ad eventi di perdita ed errore, valgono quindi tutte le politiche di gestione inerenti attesa e ritrasmissione.
+
 ### Stima del round trip time (RTT) e calcolo del timer
 
 Quanto tempo attendere una volta che il segmento è stato immesso nella rete prima di darlo per perso e ritrasmetterlo è un punto di fondamentale importanza per una buona gestione della comunicazione. Di fatto, la congestione non è causata dal forte traffico ma dalla **presenza eccessiva di traffico non utile**, quali appunto i pacchetti duplicati.
@@ -162,3 +188,5 @@ $TimeoutInterval = EstimatedRTT + 4DevRTT$
 
 In assenza di valori, ovvero **all'inizio della connessione, $TimeoutInverval$ è generalmente impostato a 1**.
 **Ogni qual volta si verifica un timeout il valore viene raddoppiato**, per poi venire ricalcolato alla corretta ricezione di un segmento atteso e conseguente aggiornamento dell' $EstimatedRTT$
+
+[^1]: TIM DAZN ad esempio offre il proprio servizio di stream simulando un multicast su TCP/IPv4 [così gestito](https://www.tim.it/assistenza/assistenza-tecnica/guide-manuali/modem-generico)
