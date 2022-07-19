@@ -141,7 +141,7 @@ Dove $\frac{1}{10^{-6}}$ rappresenta la capacità a 10 Mbps del canale.
 
 TCP viene definito nelle [RFC 793](https://datatracker.ietf.org/doc/html/rfc793), [1122](https://datatracker.ietf.org/doc/html/rfc1122), [2018](https://datatracker.ietf.org/doc/html/rfc2018), [5681](https://datatracker.ietf.org/doc/html/rfc5681) e [7323](https://datatracker.ietf.org/doc/html/rfc7323).
 
-È un protocollo **orientato alla connessione (connection-oriented)**, ovvero prevede una fase preliminare per lo stabilimento la connessione tra gli host e viene implementato esclusivamente su di essi, non ritroviamo quindi TCP su router o switch, elementi che lavorano a più basso livello nello stack protocollare. È inoltre di tipo **statefull**, ovvero tiene traccia di informazioni inerenti lo stato della connessione.
+È un protocollo **orientato alla connessione (connection-oriented)**, ovvero prevede una fase preliminare per lo stabilimento la connessione tra gli host e viene implementato esclusivamente su di essi, non ritroviamo quindi TCP su router o switch, elementi che lavorano a più basso livello nello stack protocollare. È inoltre di tipo **statefull**, ovvero tiene traccia di informazioni inerenti lo stato della connessione. Non offre però alcuna garanzia dal punto di vista della sicurezza.
 
 Le connessioni offerte da TCP sono di tipo **full-duplex** e **point-to-point**. Il **multicast** non è quindi supportato, sebbene possa essere simulato.[^1]
 
@@ -164,6 +164,56 @@ I segmenti di SYN non trasportano dati di livello applicativo, ovvero non hanno 
 La fase di handshake porta con sé degli aspetti interessanti dal punto di vista della sicurezza. Si può dimostrare come una randomizzazione dei numeri di sequenza iniziali riduca i rischi in termini di sicurezza e che l'allocazione ritardata delle risorse da parte del server possa mitigare le conseguenze di un attacco di tipo **SYN flooding**.
 
 Come tutti gli altri segmenti, anche i segmenti di SYN sono soggetti ad eventi di perdita ed errore, valgono quindi tutte le politiche di gestione inerenti attesa e ritrasmissione.
+
+### Chiusura di una connessione TCP
+
+Nello schema adottato da TCP ogni messaggio che possa definirsi importante deve venire confermato da un corrispondente acknowledgment. Questo flusso ciclico di informazione, validazione dell'informazione e validazione della validazione non risulta particolarmente problematico da mantenere durante la durata della connessione, la situazione  però si complica in fase di chiusura della connessione.
+
+Supponendo che il mittente voglia interrompere la connessione, invia al destinatario un segmento speciale, detto **FIN**. Quest'ultimo dovrà rispondere con un ACK per far capire al suo interlocutore che ha ricevuto correttamente il messaggio, non può però avere la certezza che il proprio segmento contente l'ACK arrivi alla controparte, a meno che quest'ultimo non gli mandi a propria volta un altro segmento in risposta, e così anche il mittente dovrebbe aspettarsi una conferma al proprio messaggio. Idealmente potremmo decidere di lasciare un segmento senza ACK e troncare lì la connessione. Se il segmento vale così poco da non aver bisogno di una conferma allora è definibile come non necessario e quindi inoltrarlo è uno spreco di cui è possibile fare a meno. Questo però ci porta a risalire lungo il nostro zig-zag di pacchetti senza risolvere la questione. Ci sono inoltre da considerare eventuali timer scaduti, pacchetti persi e tutti gli inconvenienti tipici di un canale inaffidabile. Comunque la si voglia vedere, una chiusura *rigorosa* di TCP degenererebbe in una ricorsione priva di caso base. 
+
+Scegliamo quindi di fare un'eccezione ed otteniamo una chiusura **scorretta** dal punto di vista logico ma applicabile ai sistemi reali: otteniamo una **chiusura in quattro passaggi (o due fasi se si preferisce)**.
+
+- Fase 1:
+  - il mittente **chiede attivamente** di chiudere la connessione inviando un pacchetto di FIN
+  - il destinatario **accetta in maniera passiva** e risponde con un ACK
+
+- Fase 2:
+  - il destinatario dopo aver inoltrato il suo segmento di ACK spedisce a propria volta un segmento di **FIN**
+  - alla ricezione del segmento, il mittente **setta un timer** e spedisce al destinatario un ACK. Chiuderà poi la connessione dal proprio lato allo scadere del timer. Il destinatario alla ricezione dell'ultimo ACK chiuderà a propria volta la connessione. In caso di perdita darà comunque la connessione per chiusa. 
+
+<img src="./img/tcp-close.png" style="zoom: 33%;" />
+
+### Struttura dei segmenti
+
+Mentre gli header di UDP aveva un peso di soli 8 byte, quelli di TCP sono grandi, quando va bene, quasi il triplo. Questo è un altro dei punti dove vediamo il costo effettivo di TCP e di tutti i servizi da esso offerti.
+
+I **20 byte di intestazione** di TCP comprendono dunque:
+
+- **numero di porta del mittente (2 byte)**
+- **numero di porta del destinatario (2 byte)**
+- **numero di sequenza (4 byte)**
+- **numero di acknowledgemente (4 byte)**
+- **offset**, indica l'inizio del payload (**4 bit**)
+- sezione riservata, tipicamente posta a 0 (4 bit)
+- campo contente i **flag**, un bit per ciascuno:
+  - **CWR**: controllo esplicito della congestione
+  - **ECE**: controllo esplicito della congestione
+  - **URG**: bit di presenza/assenza dati urgente (non usato)
+  - **ACK**: indica che il segmento è di tipo ACK e che il contenuto del campo omonimo è valido
+  - **PSH**:  se i dati dovrebbero essere spediti immediatamente al livello superiore (non usato)
+  - **RST**: flag di reset della connessione 
+  - **SYN**: flag di inizio connessione
+  - **FIN**: flag di fine connessione
+
+- **dimensione della finestra** (2 byte)
+- **checksum** (2byte)
+- puntatore ai dati urgenti (2 byte) (non usato)
+
+Posso inoltre essere presenti **header optionali** ed il **payload**. Compresi questi due, la dimensione di un segmento TCP varia quindi da un **minimo di 20 byte ad un massimo di 60 byte**.
+
+<img src="./img/tcp-segment.png" alt="tcp-segment" style="zoom: 50%;" />
+
+
 
 ### Stima del round trip time (RTT) e calcolo del timer
 
