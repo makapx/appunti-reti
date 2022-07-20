@@ -192,28 +192,67 @@ I **20 byte di intestazione** di TCP comprendono dunque:
 - **numero di porta del mittente (2 byte)**
 - **numero di porta del destinatario (2 byte)**
 - **numero di sequenza (4 byte)**
-- **numero di acknowledgemente (4 byte)**
+- **numero di acknowledgemente, contiene il riferimento al byte successivo atteso (4 byte)**
 - **offset**, indica l'inizio del payload (**4 bit**)
 - sezione riservata, tipicamente posta a 0 (4 bit)
 - campo contente i **flag**, un bit per ciascuno:
-  - **CWR**: controllo esplicito della congestione
-  - **ECE**: controllo esplicito della congestione
+  - **CWR**(Congestion Window Reduced): controllo esplicito della congestione[^3]
+  - **ECE**(Explicit Congestion Notification): controllo esplicito della congestione[^3]
   - **URG**: bit di presenza/assenza dati urgente (non usato)
   - **ACK**: indica che il segmento è di tipo ACK e che il contenuto del campo omonimo è valido
   - **PSH**:  se i dati dovrebbero essere spediti immediatamente al livello superiore (non usato)
   - **RST**: flag di reset della connessione 
   - **SYN**: flag di inizio connessione
   - **FIN**: flag di fine connessione
-
-- **dimensione della finestra** (2 byte)
-- **checksum** (2byte)
+- **dimensione della finestra** (2 byte). Tipicamente la dimensione della finestra non supera i 64kB.
+- **checksum** (2byte). Ritroviamo qui un'altra violazione simile a quella di UDP, dove estrapoliamo i dati a livello di rete ottenere lo **pseudo-header** e utilizzarlo nel calcolo.
 - puntatore ai dati urgenti (2 byte) (non usato)
 
-Posso inoltre essere presenti **header optionali** ed il **payload**. Compresi questi due, la dimensione di un segmento TCP varia quindi da un **minimo di 20 byte ad un massimo di 60 byte**.
+Posso inoltre essere presenti **header optionali**[^2] ed il **payload**. La dimensione di un segmento TCP varia quindi da un **minimo di 20 byte ad un massimo di 60 byte**. 
 
 <img src="./img/tcp-segment.png" alt="tcp-segment" style="zoom: 50%;" />
 
+#### Dimensione massima dei segmenti TCP
 
+La dimensione massima di un segmento TCP, anche indicata con l'acronimo **MSS (Maximum Segment Size)**, è un parametro generalmente definito a seconda del mezzo trasmissivo a cui si fa affidamento a livello inferiore.  Siccome la frammentazione è fortemente sconsigliata, sebbene sia possibile effettuarla, TCP fissa la dimensione dei propri segmenti in modo tale che, sommati agli header di livello di rete e al payload, possano essere contenuti all'interno di un singolo frame a livello di collegamento.
+
+L'unità tramissiva massima **MTU (Maximum Transmission Unit)** di una rete Ethernet è di **1500 byte**. Gli header di TCP ed IP ricoprono insieme di solito **40 byte**, quindi la dimensione massima del payload è pari a **1460 byte**.
+
+Nel pratico molte applicazioni, soprattutto quelle di tipo interattivo, trasmettono blocchi ben più piccoli. Nei contesti come questo, dove vi è **frammentazione**, payload ridotti sono contornati da almeno una quarantina di byte di intestazione, portando quindi ad uno **spreco della banda del canale trasmissivo** che viene occupato più dall'informazione "di servizio" che da quella utile. 
+
+### Caratteristiche comuni ai protocolli GBN e Ripetizione selettiva
+
+In linea con le regole di GBN, TCP utilizza **acknowledgemente cumulativi**. Il mittente TCP tiene quindi traccia solo di:
+
+- segmento con numero di sequenza più basso che non ha ancora ricevuto riscontro
+- numero di sequenza utilizzabile per l'inoltro di un nuovo segmento
+
+Si comporta invece come Ripetizione selettiva per quanto riguarda la ricezione. I segmenti ricevuti fuori sequenza vengono infatti  memorizzati in un buffer e una volta ricevuta l'intera finestra i segmenti vengono passati al livello superiore.
+
+### Silly window syndrome
+
+La silly windows syndrome è una criticità nata dalla cattiva gestione del **controllo di flusso** nei protocolli di tipo sliding window. Ne esistono due varianti, una causata dal mittente e l'altra dal destinatario, definite come segue:
+
+- **causata dal sender**:
+  se si configura, come accennato su, lo scenario in cui un'applicazione inoltra messaggi dal payload ridotto si ha uno spreco enorme del canale. TCP adotta come soluzione il buffering dei pacchetti utilizzando l'**algoritmo di Nagle**, raggruppando i piccoli payload in modo tale che possano essere spediti in un unico segmento. È comunque possibile disabilitarlo per quelle applicazioni che necessitano di interattività.
+- **causata dal receiver**:
+  se la finestra del receiver è quasi piena e questo è molto più lento del sender può configurarsi lo scenario per cui i due host tentano di negoziare un segmento che vada bene, occupando il canale, per poi ritrovarsi dopo poco punto e a capo. La **soluzione di Clark** impone un ridimensionamento della finestra del ricevente solo se la variazione è considerevole.
+
+#### Algoritmo di Nagle
+
+```c
+if available_data > 0 then
+	if window_size ≥ MSS & available_data ≥ MSS then
+		send_a_MSS_segment
+	else
+		if waiting_for_an_ack == true then
+		enqueue_data /* until an acknowledge is received */
+		else
+			send_data
+		end if
+	end if
+end if
+```
 
 ### Stima del round trip time (RTT) e calcolo del timer
 
@@ -239,4 +278,14 @@ $TimeoutInterval = EstimatedRTT + 4DevRTT$
 In assenza di valori, ovvero **all'inizio della connessione, $TimeoutInverval$ è generalmente impostato a 1**.
 **Ogni qual volta si verifica un timeout il valore viene raddoppiato**, per poi venire ricalcolato alla corretta ricezione di un segmento atteso e conseguente aggiornamento dell' $EstimatedRTT$
 
+### Case study: TCP e Telnet
+
+Come molte delle applicazioni interattive Telnet produce segmenti dal payload estremamente piccolo e genera spreco di banda, adotta però una strategia interessante, detta **piggybacked**, per mitigare lo spreco dei pacchetti e validare quelli ricevuti. Ogni qual volta l'host destinatario riceve un segmento, ne estrae il payload e lo reinoltra indietro. Questo echo, oltre a fare da ACK, da al mittente la possibilità di capire se il messaggio è stato ricevuto correttamente.
+
+![](./img/piggybacking.png)
+
+
+
 [^1]: TIM DAZN ad esempio offre il proprio servizio di stream simulando un multicast su TCP/IPv4 [così gestito](https://www.tim.it/assistenza/assistenza-tecnica/guide-manuali/modem-generico)
+[^2]: Tipicamente gli header opzionali sono utilizzati per negoziare la dimensione massima del segmento (MSS) o il fattore di scala della finestra 
+[^3]: Utilizzati in combinazione con il flag SYN
