@@ -36,7 +36,7 @@ Alcuni protocolli applicativi che si appoggiano ad UDP:
 
 
 
-## Protocollo TCP: premesse
+## Protocollo TCP
 
 ### Costruzione di un protocollo di trasporto affidabile
 
@@ -227,9 +227,33 @@ In linea con le regole di GBN, TCP utilizza **acknowledgemente cumulativi**. Il 
 - segmento con numero di sequenza più basso che non ha ancora ricevuto riscontro
 - numero di sequenza utilizzabile per l'inoltro di un nuovo segmento
 
-Si comporta invece come Ripetizione selettiva per quanto riguarda la ricezione. I segmenti ricevuti fuori sequenza vengono infatti  memorizzati in un buffer e una volta ricevuta l'intera finestra i segmenti vengono passati al livello superiore.
+Si comporta invece come Ripetizione selettiva per quanto riguarda la ricezione. I segmenti ricevuti fuori sequenza vengono infatti  memorizzati in un buffer e una volta ricevuta l'intera finestra i segmenti vengono passati al livello superiore. La ritrasmissione dei pacchetti soggetti a perdita (o errati) quindi avviene in maniera selettiva.
 
-### Silly window syndrome
+### Controllo di flusso
+
+Al contrario di UDP, che spedisce i propri datagram senza particolare interesse su ciò che avverrà una volta che questi siano usciti sulla rete, TCP offre un servizio di controllo di flusso. Nello specifico, **con controllo di flusso si intende la capacità del destinatario di coordinarsi con il mittente in maniera tale che, anche nel caso in cui questo sia particolarmente lento a processare i dati ricevuti, non si arrivi ad uno stallo**. La policy quindi non riguarda solo il modo in cui l'host ricevente amministra il proprio buffer dedicato alla comunicazione ma anche i ritmi che il mittente deve mantenere per far sì che non si verifichi la situazione citata poco su. Lo strumento che permette il controllo di flusso è la **finestra di ricezione**.
+
+La finestra di ricezione fornisce al mittente indicazioni su quanto il destinatario possa ricevere in un preciso istante della connessione.
+
+Indichiamo la finestra con $rwnd$, l'ultimo byte ricevuto dal destinatario $lastByteRcvd$, l'ultimo byte letto (quindi ricevuto e passato a livello applicativo) con $lastByteRead$, e la dimensione del buffer di ricezione con $rcvBuffer$ possiamo scrivere le seguenti:
+
+$lastByteRcvd - lastByteRead \le rcvBuffer$
+
+
+La finestra di ricezione è quindi impostata alla quantità di spazio momentaneamente disponibile nel buffer:
+
+$rwnd = rcvBuffer - [lastByteRcvd - lastByteRead]$
+
+
+Affinché il controllo di congestione sia garantito bisogna mantenere i dati senza acknowledgement al di sotto del valore di $rwnd$. Indicando l'ultimo byte inviato dal mittente con $lastByteSent$ e l'ultimo che è stato confermato con $lastByteAcked$, ciò si traduce nel rispetto della diseguaglianza:
+
+$lastByteSent - lastByteAcked \le rwnd$
+
+La violazione di quest'ultima è quindi da intendersi come un evento di congestione.
+
+Può configurarsi il caso in cui il buffer del ricevente si riempia e di conseguenza la finestra di ricezione vada a zero. Se proprio in questa occasione l'host ricevente non ha più dati o ACK da spedire indietro (o da spedire con il ruolo di mittente, considerando che il canale è full-duplex) i dati verranno utilizzati ed il buffer verrà svuotato senza che la controparte venga informata di ciò. La comunicazione va quindi in fase di stallo. Per evitare ciò TCP prevede che, in caso di finestra a zero, l'host mittente continui a mandare dei pacchetti di test, privi quindi di payload, a cui il ricevente risponderà indicando la dimensione corrente della finestra.
+
+#### Silly window syndrome
 
 La silly windows syndrome è una criticità nata dalla cattiva gestione del **controllo di flusso** nei protocolli di tipo sliding window. Ne esistono due varianti, una causata dal mittente e l'altra dal destinatario, definite come segue:
 
@@ -238,7 +262,7 @@ La silly windows syndrome è una criticità nata dalla cattiva gestione del **co
 - **causata dal receiver**:
   se la finestra del receiver è quasi piena e questo è molto più lento del sender può configurarsi lo scenario per cui i due host tentano di negoziare un segmento che vada bene, occupando il canale, per poi ritrovarsi dopo poco punto e a capo. La **soluzione di Clark** impone un ridimensionamento della finestra del ricevente solo se la variazione è considerevole.
 
-#### Algoritmo di Nagle
+##### Algoritmo di Nagle
 
 ```c
 if available_data > 0 then
@@ -246,7 +270,7 @@ if available_data > 0 then
 		send_a_MSS_segment
 	else
 		if waiting_for_an_ack == true then
-		enqueue_data /* until an acknowledge is received */
+			enqueue_data /* until an acknowledge is received */
 		else
 			send_data
 		end if
@@ -277,6 +301,8 @@ $TimeoutInterval = EstimatedRTT + 4DevRTT$
 
 In assenza di valori, ovvero **all'inizio della connessione, $TimeoutInverval$ è generalmente impostato a 1**.
 **Ogni qual volta si verifica un timeout il valore viene raddoppiato**, per poi venire ricalcolato alla corretta ricezione di un segmento atteso e conseguente aggiornamento dell' $EstimatedRTT$
+
+### Controllo della congestione
 
 ### Case study: TCP e Telnet
 
