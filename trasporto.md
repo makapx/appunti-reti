@@ -34,8 +34,6 @@ Alcuni protocolli applicativi che si appoggiano ad UDP:
 | Routing Information Protocol (RIP)         | Informazioni sullo stato della rete |
 | Dynamic Host Configuration Protocol (DHCP) | Assegnazione indirizzi IP           |
 
-
-
 ## Protocollo TCP
 
 ### Costruzione di un protocollo di trasporto affidabile
@@ -303,6 +301,41 @@ In assenza di valori, ovvero **all'inizio della connessione, $TimeoutInverval$ �
 **Ogni qual volta si verifica un timeout il valore viene raddoppiato**, per poi venire ricalcolato alla corretta ricezione di un segmento atteso e conseguente aggiornamento dell' $EstimatedRTT$
 
 ### Controllo della congestione
+
+#### Throughput e offered load
+
+L'evento di congestione si configura generalmente nel momento in cui gli host spediscono ad una frequenza più alta di quella supportata dalla rete. Questo coincide con un allinearsi del throughput con la capacità della rete che degenera in eventi di perdita dati dai buffer overflow e conseguenti ritrasmissioni. Da una prima analisi quello che può sembrare ideale dal punto di vista del throughput è quindi problematico per il benessere della rete. L'ideale sarebbe quindi mantenersi poco al di sotto della soglia imposta dalla capacità di quest'ultima.
+
+<img src="./img/congestione.png" alt="congestione" style="zoom: 80%;" />
+
+Differenziamo il traffico utile inoltrato sulla rete, chiamato $\lambda_{in} \ bytes/s$, da quello complessivo, quindi comprensivo dei pacchetti duplicati, $\lambda_{in} \ bytes/s'$, anche detto **carico offerto**. Se ci troviamo nel bel mezzo di una congestione abbiamo una rete satura di pacchetti duplicati, ovvero:
+
+$\lambda_{in} \lt\lt \lambda_{in}' $
+
+Se definiamo la capacità del canale come $R\ bytes/s$  dobbiamo mantere quindi il **transmission rate** al di sotto di suddetto limite. TCP fornisce connessioni full-duplex quindi ogni host ha idealmente a disposizione $R/2\ bytes/s$.
+
+Gli $R/2\ bytes/s$ disponibili vengono suddivisi, a seconda dello stato della congestione, tra il traffico utile $\lambda_{in}$ e gli eventuali pacchetti duplicati $ \lambda_{in}' - \lambda_{in}$ quando $\lambda_{in}' \gt \lambda_{in}$. Va da se quindi che più la congestione avanza minore è la capacità destinata al traffico utile. Si dice che **il traffico utile è schiacciato (o soffocato) dalle ritrasmissioni**.
+
+#### Costi della congestione
+
+Possiamo quindi individuare i seguenti costi negli eventi di congestione:
+
+- ritardi nell'accodamento quando la frequenza dei pacchetti inoltrati si avvicina al limite del throughput;
+- ritrasmissione causata dai buffer overflow;
+- ritrasmissioni inutili causate dallo scadere prematuro del timer per pacchetti che si trovano invece nella rete;
+- spreco della capacità trasmissiva degli $i-1\ esimi$ elementi di rete precedenti (router, switch e collegamenti) se il pacchetto viene scartato dall'$i-esimo$ elemento per via di un buffer overflow
+
+In assenza di meccanismi di controllo, tutte queste criticità portano la congestione ad **auto-alimentarsi**, facendo collassare la rete.
+
+#### Approcci al controllo della congestione
+
+#### Controllo della congestione in TCP
+
+##### Slow start
+
+##### Congestion avoidance
+
+##### Fast recovery
 
 ### Case study: TCP e Telnet
 
