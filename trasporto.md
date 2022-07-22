@@ -312,7 +312,7 @@ Differenziamo il traffico utile inoltrato sulla rete, chiamato $\lambda_{in} \ b
 
 $\lambda_{in} \lt\lt \lambda_{in}' $
 
-Se definiamo la capacità del canale come $R\ bytes/s$  dobbiamo mantere quindi il **transmission rate** al di sotto di suddetto limite. TCP fornisce connessioni full-duplex quindi ogni host ha idealmente a disposizione $R/2\ bytes/s$.
+Se definiamo la capacità del canale come $R\ bytes/s$ dobbiamo mantenere quindi il **transmission rate** al di sotto di suddetto limite. TCP fornisce connessioni full-duplex quindi ogni host ha idealmente a disposizione $R/2\ bytes/s$.
 
 Gli $R/2\ bytes/s$ disponibili vengono suddivisi, a seconda dello stato della congestione, tra il traffico utile $\lambda_{in}$ e gli eventuali pacchetti duplicati $ \lambda_{in}' - \lambda_{in}$ quando $\lambda_{in}' \gt \lambda_{in}$. Va da se quindi che più la congestione avanza minore è la capacità destinata al traffico utile. Si dice che **il traffico utile è schiacciato (o soffocato) dalle ritrasmissioni**.
 
@@ -327,23 +327,91 @@ Possiamo quindi individuare i seguenti costi negli eventi di congestione:
 
 In assenza di meccanismi di controllo, tutte queste criticità portano la congestione ad **auto-alimentarsi**, facendo collassare la rete.
 
-#### Approcci al controllo della congestione
+#### Strategie di controllo della congestione
 
-#### Controllo della congestione in TCP
+Il controllo di congestione avviene principalmente secondo due modalità:
+
+- end-to-end
+- assistito dalla rete
+
+Nel **controllo di congestione end-to-end** il protocollo a livello di trasporto deve dedurre la presenza della congestione in base alle informazioni a sua disposizione, cioè gli eventi di perdita (scadere del time o tre ACK duplicati) , senza alcuna notifica esplicita da parte della rete. Se deduce che c'è una congestione riduce la frequenza di immissione sulla rete.
+
+La strategia di **controllo di congestione assistito dalla rete** prevede invece un feedback esplicito da parte del livello sottostante, generalmente un pacchetto inoltrato dal router verso il mittente, che può essere o una semplice informazione di presenza/assenza di congestione o un più strutturato **protocollo di congestione ATM ABR (Available Bite Rate)**. La presenza della congestione può venire notificata o attraverso un pacchetto specifico, detto **chokepacket**, oppure impostando i bit dedicati al controllo di congestione dei pacchetti quando questi passano dal router diretti verso la destinazione.
+
+Per molto tempo TCP ha implementato il controllo di congestione end-to-end, tutt'ora utilizzato, visto che IP non forniva informazioni sullo stato della connessione, sono state comunque sviluppare varianti orientate al controllo assistito.
+
+#### Controllo della congestione end-to-end in TCP
+
+Per limitare l'immissione di nuovi pacchetti sul canale, TCP tira in ballo alcuni degli attori visti in precedenza durante il controllo di flusso, e introduce il concetto di **finestra di congestione (congestion window)**, anche indicata con $cwnd$.
+
+La finestra di congestione impone un ulteriore vincolo alla velocità di immissione sulla rete, questa volta non per sincronizzare mittente e destinatario ma per il puro benessere della rete. Come per la finestra di ricezione, andiamo a limitare il numero di byte che non hanno ancora ricevuto acknowledgement, secondo la disequazione:
+
+$ lastByteSent - lastByteAcked \le min\{ cwnd,\ rwnd\}$
+
+Come nel caso della finestra di ricezione, anche la finestra di congestione è soggetta ad ampliamenti e restringimenti a seconda dello stato della rete. Ogni qual volta si registra un evento di perdita, sinonimo della presenta della congestione, la finestra viene ridotta e, viceversa, alla ricezione degli ACK, viene incrementata. Per questo motivo si dice la variazione della finestra di congestione in TCP è **self-clocking**.
+
+La policy di TCP prevede quindi di spedire alla frequenza massima i propri segmenti per poi rallentare non appena viene rilevata una congestione, riprendendo non appena quest'ultima si mitiga. Nel pratico possiamo dire che congestiona di proposito la rete per capirne i limiti in un dato momento. Sebbene l'approccio possa sembrare contro intuitivo, le modalità seguite lo rendono abbastanza efficiente nella pratica.
 
 ##### Slow start
 
+TCP inizia le proprie connessioni con una fase di **slow start**, dove la dimensione della finestra di congestione viene impostata ad 1MSS. Inizialmente abbiamo quindi una velocità di invidio di circa $\frac{MSS}{RTT}$, cioè di un segmento per round trip, con una struttura simile a quella del protocollo stop-and-wait. In questa fase alla ricezione di un ACK la dimensione della finestra viene aumentata di 1MSS per riscontro. Se spediamo quindi un segmento, per cui riceviamo ACK, al successivo round trip ne potremmo spedire due. Se entrambi i segmenti vengono confermati la dimensione crescerà di due, un incremento per ciascun segmento ricontrato. L'ampliamento della finestra segue quindi una **curva esponenziale**.
+
+**Se si verifica un timeout**, il mittente TCP pone il valore della finestra di congestione $cwnd$ ad 1 e inizia nuovamente il processo di slow start, impostando la variabile di stato $ssthresh$ **(slow start threshold)** alla metà dell'attuale finestra di congestione, ovvero $ssthresh = \frac{cwnd}{2}$.
+
+Quando $cwnd = ssthresh$ la fase di slow start termina e si passa a quella di **congestion avoidance**.
+
+Supponiamo quindi che la nostra $cwnd$ abbia dimensione 16 al momento dell'evento di timeout. Il valore di $cwnd$ viene posto ad uno e $ssthresh$ ad 8. Se non ci sono altri eventi di perdita, la finestra di ricezione al quarto round trip raggiungerà anche essa dimensione 8, concludendo la fase di slow start.
+
+Nel caso in cui l'evento di perdita sia costituito da **3 ACK duplicati** (quindi sospetta perdita), TCP effettuerà la **ristrasmissione rapida (fast retransmit)** e passerà direttamente alla fase di **fast recovery**.
+
 ##### Congestion avoidance
 
+In fase di congestion avoidance l'incremento della finestra di congestione alla ricezione di un ACK avviene secondo un **andamento lineare**, quindi di un solo 1MSS per round trip.
+
+$cwnd = cwnd + MSS(\frac{MSS}{cwnd})$
+
+Nel caso di un timeout si ripassa nuovamente alla fase di slow start, impostando ancora una volta la dimensione della finestra ad uno e dimezzando la slow start threshold, mentre nel caso di ricezione di 3 ACK duplicati si effettua il fast retransmit e si passa alla fase di fast recovery.
+
 ##### Fast recovery
+
+Fast recovery è una fase non obbligatoria, seppur fortemente consigliata, in cui la finestra viene incrementata di 1MSS ogni qual volta viene ricevuto un ACK duplicato. Se il segmento riesce finalmente a venire confermato,  si passa nuovamente alla fase di congestion avoidance, se invece scattano ulteriori timeout la dimensione della finestra viene portata ad uno e la slow start threshold dimezzata.
+
+![congestion diagram](./img/congestion-diagram.png)
+
+##### TCP Tahoe e TCP Reno a confronto
+
+Una delle prime versioni di TCP, detta Tahoe, si limitava ad effetturare il fast retransmit ma non prevedeva la fase di fast recovery, introdotta invece da TCP Reno. Si può osservare come, se i due si comportano inizialmente nella stessa maniera, grazie alla ripresa più rapida TCP Reno garantisce prestazioni migliori quando si presentano gli eventi di perdita.
+
+![TCP Tahoe vs TCP Reno](./img/tahoe-vs-reno.png)
+
+Se osserviamo varianti più recenti e meglio ottimizzate come TCP NewReno e TCP CUBIC notiamo ancora di più la differenza in fatto di performance.
+
+##### Ulteriori note sul controllo della congestione: AIMD
+
+Visto l'approccio utilizzato, cioè di incrementare la dimensione della finestra di congestione di un MSS  per volta e di dimezzare all'occorrenza, la forma di controllo di congestione utilizzata da TCP è spesso indicata come di tipo **AIMD (Additive-Increase, Multiplicative Decrease)**, incremento additivo, decremento sottrattivo. L'adozione di un algoritmo AIMD per la gestione della congestione si traduce graficamente nella caratteristica forma dentellata vista su.
+
+#### Controllo della congestione assistito in TPC
+
+Il controllo di congestione assistito dalla rete prevede variazioni sia nella struttura di TCP che in quella del protocollo IP e rompe ancora una volta il rigido schema che ci si aspetterebbe da uno stack a livelli. Esistono principalmente due modi per effettuare il controllo assistito:
+
+- attraverso la notifica esplicita della congestione
+- calcolata in base al ritardo dei pacchetti
+
+La **notifica esplicita della congestione** **(ECN)** combacia con quando accennato prima sui bit **ECE** e **CWR** presenti nella struttura dei segmenti TCP. Al passaggio di un segmento TCP di **ACK** (che quindi ritorna indietro al mittente) da un router, se si prevede che stia per avvenire una congestione, questo imposta i bit opportunamente per notificare la congestione e richiedere la riduzione della finestra. **La notifica avviene quindi poco prima che i buffer del router siano effettivamente pieni**, permettendo agli host di regolarsi di conseguenza e mitigare le perdite. Alla ricezione di un segmento che indica congestione il mittente infatti può dimezzare la propria finestra di congestione, esattamente come farebbe in caso di timeout, ed effettua una ritrasmissione rapida verso il destinatario, impostando il bit di **CWR** ad 1 così da effettuare un passa parola sulla possibile congestione.
+
+Il **controllo di congestione basato sul ritardo** (*delay-based*) invece un **meccanismo pro-attivo** per il rilevamento della congestione basato sul calcolo del ritardo minimo sul un percorso non congestionato. Calcolando l'RTT di tutti i pacchetti che vanno da un host mittente ad uno destinatario, possiamo rilevare il tempo minimo per l'attraversamento di tale percoso. Questo $RTT_{min}$ va inteso come la velocità a cui un pacchetto può andare in assenza di congestione sulla rete, il throughput ipotetico per un percorso non congestionato è quindi all'incirca $\frac{cwnd}{RTT_{min}}$. Se il throughput effettivo si avvicina al valore appena citato è possibile aumentare la frequenza di inoltro sulla rete, se invece è nettamente inferiore al valore di riferimento va diminuita.
+
+L'idea descritta, introdotta da TCP Vegas, è quindi di **adeguare la velocità di inoltro in base ai colli di bottiglia della rete**, di cui si ottiene una misura attraverso il calcolo dei tempi di transito dei pacchetti, e mantenersi poco al di sotto della loro capacità.
+
+Il controllo assistito in entrambe le sue forme non è quindi sostitutivo di quello end-to-end ma un arricchimento dello stesso.
+
+### Fairness
 
 ### Case study: TCP e Telnet
 
 Come molte delle applicazioni interattive Telnet produce segmenti dal payload estremamente piccolo e genera spreco di banda, adotta però una strategia interessante, detta **piggybacked**, per mitigare lo spreco dei pacchetti e validare quelli ricevuti. Ogni qual volta l'host destinatario riceve un segmento, ne estrae il payload e lo reinoltra indietro. Questo echo, oltre a fare da ACK, da al mittente la possibilità di capire se il messaggio è stato ricevuto correttamente.
 
 ![](./img/piggybacking.png)
-
-
 
 [^1]: TIM DAZN ad esempio offre il proprio servizio di stream simulando un multicast su TCP/IPv4 [così gestito](https://www.tim.it/assistenza/assistenza-tecnica/guide-manuali/modem-generico)
 [^2]: Tipicamente gli header opzionali sono utilizzati per negoziare la dimensione massima del segmento (MSS) o il fattore di scala della finestra 
