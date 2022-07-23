@@ -407,6 +407,20 @@ Il controllo assistito in entrambe le sue forme non è quindi sostitutivo di que
 
 ### Fairness
 
+Nei sistemi reali le connessioni TCP aperte in uno stesso momento possono essere molteplici, sorge quindi il problema su come queste debbano ripartirsi la banda. Idealmente ogni connessione TCP dovrebbe impegnare $\frac{1}{n}$ del canale, scenario irrealistico visto che la maggior parte degli applicativi cerca di assicurarsi quanta più banda possibile. La **ripartizione equa** delle risorse è quindi un problema centrale per il corretto funzionamento degli applicativi.
+
+Sebbene il concetto risulti intuitivo, la fairness va dimostrata in maniera rigorosa. Le note a seguire sono solo una spiegazione grossolana ma è possibile trovare una dimostrazione dettagliata [qui](https://sites.cs.ucsb.edu/~ravenben/classes/papers/cj89.pdf). 
+
+Supponendo di avere due connessioni TCP con MSS uguali e una larghezza di banda massima R. Se la somma dei due throughput supera il valore di R otteniamo una congestione, il che porterà inevitabilmente entrambe a dimezzare la frequenza di inoltro sulla rete, come previsto dall'algoritmo AIMD.
+
+La retta che indica la ripartizione equa della banda è espressa come $x=y$. Al dimezzarsi della finestra otteniamo per le nostre connessioni TCP equazioni del tipo $\frac{y}{2} = m\frac{x}{2} +q$, che vengono ulteriormente frazionate con il susseguirsi degli eventi di perdita. Avendo a disposizione le rette che rappresentano l'andamento delle connessione, possiamo verificare se i triangoli che si vengono a creare sono simili e quindi se siamo vicini alla retta che indica la ripartizione equa del canale.
+
+Si osserva come, man mano che le connessioni vanno avanti, queste si allineano e si ripartiscono in maniera equa la banda, ciò è dovuto proprio al modo in cui agisce il controllo di congestione. TCP è quindi un protocollo che, idealmente, garantisce fairness alle sue connessioni.
+
+![fairness](./img/fairness.png)
+
+Alcune criticità al riguardo sono date dalla presenza di connessioni UDP, che tengono a soffocare quelle TCP, e al fatto che ogni applicativo può aprire più di una connessione TCP per i propri scopi, di fatto occupando nel complesso più di $\frac{1}{n}$ del canale. In questi casi la fairness va intesa come sola ripartizione del canale tra connessioni distinte ma se queste provengono dallo stesso applicativo non c'è particolare margine di intervento, al più si può limitare il numero di connessioni TCP apribili da parte di uno stesso applicativo.
+
 ### Case study: TCP e Telnet
 
 Come molte delle applicazioni interattive Telnet produce segmenti dal payload estremamente piccolo e genera spreco di banda, adotta però una strategia interessante, detta **piggybacked**, per mitigare lo spreco dei pacchetti e validare quelli ricevuti. Ogni qual volta l'host destinatario riceve un segmento, ne estrae il payload e lo reinoltra indietro. Questo echo, oltre a fare da ACK, da al mittente la possibilità di capire se il messaggio è stato ricevuto correttamente.
