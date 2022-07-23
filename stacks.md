@@ -18,7 +18,7 @@ Se OSI ammette sia connessioni comunicazioni *connection-less* che *connection-o
 
 Ultimo ma non meno importante dettaglio, TCP/IP si differenzia da OSI anche per il numero di livelli. Gli ulteriori due livelli di sessione e presentazioni previsti da OSI di fatti si sono dimostrati non molto sfruttati dagli applicativi, se non per un set ristretto di funzioni, motivo per cui ad oggi a livello applicativo esistono feature quali ad esempio i *cookie*.
 
-<img src="/home/makapx/Scrivania/Università/Appunti/img/osi-tcp.png" alt="osi-tcp"/>
+<img src="./img/osi-tcp.png" alt="osi-tcp"/>
 
 
 
