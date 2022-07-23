@@ -13,6 +13,11 @@ sw(Stop-and-wait)
 gbn(Go-back-N)
 sr(Ripetizione selettiva)
 
+affidabilita(Principi del trasferimento dati affidabile)
+controlloflusso(Controllo di flusso)
+controllocongestione(Controllo di congestione)
+fairness(Fairness)
+
 architetturaP2P(Architettura P2P)
 architetturacs(Architettura client-server)
 
@@ -45,6 +50,12 @@ arq --> sw
 
 arq --> sr
 arq --> gbn
+
+tcp --> affidabilita
+affidabilita --> controllocongestione
+affidabilita --> controlloflusso
+
+controllocongestione -.-> fairness
 
 subgraph sliding-window-protocolo[Protocolli sliding window]
 sr
