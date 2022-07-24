@@ -135,9 +135,58 @@ Gli indirizzi di classe D ed E furono pensati per il multicast e evenutali gesti
 
 Lo schema **classless** risulta invece **più flessibile**, adatto a definire reti con il range di indirizzi disponibili quanto più vicino a quello di interesse. Utilizzando uno schema classless è infatti possibile applicare qualunque netmask e ripartire gli indirizzi secondo le proprie esigenze. Questo tipo di indirizzamento è anche noto come **CIDR (Classless Inter-Domain Routing)**
 
-#### Indirizzamento
+#### Indirizzamento locale e sulla rete
 
-##### Indirizzamento intraLAN: il protocollo ARP
+Gestire il modo in cui un dato pacchetto, partito da una sorgente, arrivi alla destinazione indicata è uno dei principali compiti del livello di rete. Qui ritroviamo entrambi i concetti di routing e forwarding. Distinguiamo i casi in cui l'indirizzamento avviene limitatamente alla stesse rete e quello in cui invece il destinatario si trova all'esterno.
+
+##### Indirizzamente intraLAN
+
+###### Address Resolution Protocol (ARP)
+
+Il protocollo **ARP (Address Resolution Protocol)** appartiene alla suite dei **protocolli di utility** di IPv4 e viene utilizzato per *mappare* gli indirizzi IP agli indirizzi MAC. L'esigenza di mettere in relazione i due si presenta perché la vera e propria comunicazione avviene a livello di **datalink**, che opera con i **MAC address**, e quindi si ha la necessità di conoscere il MAC address del destinatario in maniera tale da inserirlo opportunamente all'interno della frame Ethernet. Abbiamo quindi un altro esempio di violazione della struttura a livelli.
+
+Per scoprire il corrispondente indirizzo MAC l'host mittente inoltra in broadcast un pacchetto, detto **ARP Request**, indicando il proprio indirizzo IP e MAC e l'indirizzo IP del destinatario. Tutti gli altri host sono in ascolto del canale. L'host interessato risponde con una **ARP Reply**, riportando l'indirizzo IP e MAC del mittente originale come destinazione e impostando il proprio IP e MAC come sorgente. Durante questo scambio di messaggi sia i diretti interessati che gli altri host in ascolto sul canale inseriscono gli indirizzi nella così detta **ARP cache** (o ARP table), impostando per ogni coppia di indirizzi un TTL.
+
+Effettuata con successo la mappatura è possibile inoltrare il pacchetto al destinatario
+
+Come per tutti gli altri host, anche le interfacce del router connesse alla LAN vengono mappate dal protocollo. Se l'indirizzo di destinazione si trova al di fuori della rete infatti i pacchetti vengono semplicemente inoltrati al router come se fosse un host ordinario.
+
+<img src="./img/arp.png" alt="ARP" style="zoom: 67%;" />
+
+Alcune delle criticità più evidenti di ARP sono l'**assenza di meccanismi di autenticazione e di stato** (non ci sono identificativi di transazione). È possibile quindi dirottare il traffico IP semplicemente inoltrando un pacchetto ARP Reply contraffatto, indicando il proprio indirizzo MAC come destinazione e l'indirizzo IP di interesse. Indichiamo questo tipo di attacchi come **IP spoofing** e **ARP spoofing** (o **ARP cache poisoning**)
+
+###### Reverse Address Resolution Protocol (RARP)
+
+In maniera abbastanza speculare al protocollo ARP, il protocollo **RARP** veniva utilizzato per **risalire all'indirizzo IP utilizzando il MAC address**. Il caso d'uso più frequente era uno scenario molto simile ai più moderni protocolli BOOTP e DHCP, dove un host al proprio ingresso nella rete richiede un indirizzo IP. Il **server RARP** di solito fornisce all'host che ne fa richiesta un nuovo indirizzo oppure uno precedentemente utilizzato da questo, non ancora scaduto.
+
+In merito alla sicurezza valgono considerazioni analoghe a quelle fatte per il protocollo ARP.
+
+###### BOOTP
+
+BOOTP è stato un protocollo di tipo **client-server**, precursore del più moderno e attuale DHCP. Analogamente a RARP, veniva utilizzato dall'host per richiedere un indirizzo IP, pescato da un **pool di indirizzi statici**, lo contraddistingueva però la particolarità di venire utilizzato per caricare la **boot-image remota**, quindi a seguire di una richiesta BOOTP veniva aperta una connessione di tipo FTP per il trasferimento dell'immagine. BOOTP è utilizzabile sia all'interno della stessa LAN che da host esterni.
+
+![BOOTP request](./img/bootp-request.png)
+
+![BOOTP reply](./img/bootp-reply.png)
+
+###### DHCPv4
+
+DHCP è un protocollo applicativo di tipo **client-server** **basato su UDP** utilizzato per l'attribuzione degli indirizzi IP all'interno delle reti LAN. Ne esistono due versioni, una per compatibile con il formato IPv4 e una per il formato IPv6. Descriviamo la versione utilizzata per IPv4 come segue:
+
+- un client che desidera entrare nella LAN necessita di un indirizzo IP, per ottenerlo inoltra un messaggio, detto **DHCP DISCOVER,** in broadcast impostando il proprio indirizzo mittente a $0.0.0.0$ (come avviene per BOOTP) e riportando il proprio indirizzo MAC.
+- uno o più server DHCP (se presenti) rispondono, offrendo un indirizzo IP, posto nel campo ``yiaddr`` nel range degli indirizzi disponibili della rete e specificando eventuali altri parametri di configurazione. Questo messaggio, detto **DHCP OFFER** ha come indirizzo MAC di destinazione quello dell'host interessato e come indirizzo IP quello di broadcast, per gli stessi motivi osservati per il protocollo ARP.
+- il client seleziona una tra le offerte ricevute e manda un messaggio **DHCP ACCEPT** (o **DHCP REQUEST**) **in broadcast**, specificando l'identificativo del server di cui ha accettato la richiesta. Così facendo gli altri server DHCP sono informati che la richiesta non è più pending ed è stata soddisfatta da qualcun altro.
+- infine il server DHCP risponde con un ACK
+
+<img src="./img/dhcp.jpg" alt="DHCP" style="zoom: 67%;" />
+
+I quattro messaggi illustrati sono corredati di un **ID di transazione**. Ciò permette di discriminare tra i vari client che entrano nella rete nello stesso istante ed evitare i conflitti.
+
+<img src="./img/dhcp-packet.png" alt="DHCP packet" style="zoom:80%;" />
+
+Come molti altri servizi presenti nella rete, anche DHCP è soggetto ad attacchi di tipo spoofing e man-in-the-middle.
+
+##### Algoritmi di routing
 
 ### Assegnamento dei blocchi di indirizzi
 
